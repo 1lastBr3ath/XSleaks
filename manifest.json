@@ -1,0 +1,25 @@
+{
+  "name": "XSleaks",
+  "version": "0.1.0",
+  "homepage_url": "https://cm2.pw/",
+  "description": "Trying to detect XS leaks",
+  "permissions": [
+    "activeTab",
+    "webRequest",
+    "notifications",
+    "<all_urls>"
+  ],
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["contentscript.js"],
+    "run_at": "document_start",
+    "all_frames": true
+  }],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "icons": {
+    "48": "error.png"
+  },
+  "manifest_version": 2
+}
