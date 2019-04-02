@@ -16,7 +16,7 @@ const reset = () => {
   PATTERNS = {
     window   :[window.length],
     frames   :[frames.length],
-    history  :[history.length],
+    //history  :[history.length],
     //resource :[performance.getEntriesByType('resource').length],
   };
   localStorage['XSLINKS'] = localStorage['XSLINKS']||'';
@@ -35,9 +35,10 @@ const notify = url => {
 
 const record = () => {
   let NOTIFIED = false;
+  const SAVED_URLS = localStorage['XSLINKS'] || '';
   const CURRENT_URL = document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
-  if((localStorage['XSLINKS']||'').includes(CURRENT_URL+'\n')) return;
-  localStorage['XSLINKS'] += CURRENT_URL + '\n';
+  if(SAVED_URLS.includes(CURRENT_URL+'\n')) return;
+  localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
   Object.entries(PATTERNS).forEach(([key,value]) => {
     const CURRENT_VALUE = window[key].length;
     const PREVIOUS_VALUE = value[value.length-1];
