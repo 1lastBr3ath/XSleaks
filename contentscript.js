@@ -18,11 +18,13 @@ const reset = () => {
   PATTERNS = {
     window   :[window.length],
     frames   :[frames.length],
-    //history  :[history.length],
+    history  :[history.length],
     //resource :[performance.getEntriesByType('resource').length],
   };
   NOTIFIED = false;
   console.table(PATTERNS);
+  // delete history if > 2
+  if(history.length>2) delete(PATTERNS['history']);
 }
 
 const notify = (url, clear=false) => {
@@ -38,6 +40,7 @@ const notify = (url, clear=false) => {
         body: `text=${encodeURIComponent(url)}\n${JSON.stringify(PATTERNS)}`,
         headers: {'Content-type':'application/x-www-form-urlencoded'},
       });
+      NOTIFIED=true;
 }
 
 const record = () => {
@@ -46,9 +49,11 @@ const record = () => {
     const PREVIOUS_VALUE = value[value.length-1];
     if(CURRENT_VALUE != PREVIOUS_VALUE){
       PATTERNS[key].push(CURRENT_VALUE);
-      if(!NOTIFIED){
-        NOTIFIED = true;
-        notify(document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, ''));
+      const SAVED_URLS = localStorage['XSLINKS'] || '';
+      const CURRENT_URL = document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
+      if(!NOTIFIED && !SAVED_URLS.includes(CURRENT_URL+'\n')){
+        notify(CURRENT_URL);
+        localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
       }
       console.table(PATTERNS);
     }
