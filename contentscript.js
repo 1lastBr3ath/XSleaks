@@ -563,7 +563,7 @@ reset();
   const pattern = new RegExp(`^[\\w.]*${parts[1]}\\.${parts[0]}$`, 'mu');
   const match = WHITELISTS.match(pattern);
   if(match && document.domain.endsWith(match)){
-    if(false==BLACKLISTS.split('\n').filter(url=>{new RegExp('^'+url.replace(/[.*+?/\\[{'^"}\]&$]/g, '\\$&'), 'mu').test(document.URL)})){
+    if(false==BLACKLISTS.split('\n').filter(url=>{return(url && new RegExp('^'+url.replace(/[.*+?/\\[{'^"}\]&$]/g, '\\$&'), 'mu').test(document.URL))})){
       TIMER = setInterval(record, 100);
       setTimeout(notify, 1000 * 30, document.URL, TIMER);
       const observer = new MutationObserver(record);
