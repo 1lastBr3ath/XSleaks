@@ -6,6 +6,7 @@
   "permissions": [
     "activeTab",
     "webRequest",
+    "webRequestBlocking",
     "notifications",
     "<all_urls>"
   ],
@@ -16,7 +17,7 @@
     "all_frames": true
   }],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["background.js", "diff.js"]
   },
   "icons": {
     "48": "error.png"

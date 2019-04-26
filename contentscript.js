@@ -10,7 +10,7 @@
 let TIMER;
 let PATTERNS;
 let NOTIFIED;
-const CHANNEL_ID = '-281857647';
+const CHANNEL_ID = '-395531536';
 const TOKEN = '824308319:AAGzNYLsgrpHnDBCebEdTnT64ESdO9vKTIg';
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}/sendMessage?parse_mode=HTML&disable_web_page_preview=true&chat_id=${CHANNEL_ID}`;
 
@@ -506,9 +506,10 @@ zyngagames.com
 `;
 
 const BLACKLISTS = `
-https://www.google.com/search?
+https://www.google.com/maps/embed
 https://developer.mozilla.org/en-US/docs/
-https://www.youtube.com/(watch|embed|search|results|playlist|channel)?
+https://www.google.com/(search|recaptcha|sorry)
+https://www.youtube.com/(watch|embed|search|results|playlist|channel)
 `;
 
 const reset = () => {
@@ -524,7 +525,7 @@ const reset = () => {
   if(history.length>2) delete(PATTERNS['history']);
 }
 
-const notify = (url, clear=false) => {
+const notify = (url, msg, clear=false) => {
       if(clear){
         clearInterval(TIMER);
         if(Object.values(PATTERNS).filter(i=>i.length>1)==false) return;
@@ -534,7 +535,7 @@ const notify = (url, clear=false) => {
         method:'POST',
         credentials:'omit',
         referrerPolicy:'no-referrer',
-        body: `text=${encodeURIComponent(url)}\n${JSON.stringify(PATTERNS)}`,
+        body: `text=${encodeURIComponent(url)}\n${encodeURIComponent(JSON.stringify(msg))}`,
         headers: {'Content-type':'application/x-www-form-urlencoded'},
       });
       NOTIFIED=true;
@@ -549,7 +550,7 @@ const record = () => {
       const SAVED_URLS = localStorage['XSLINKS'] || '';
       const CURRENT_URL = document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
       if(!NOTIFIED && !SAVED_URLS.includes(CURRENT_URL+'\n')){
-        notify(CURRENT_URL);
+        notify(CURRENT_URL, PATTERNS);
         localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
       }
       console.table(PATTERNS);
@@ -558,28 +559,15 @@ const record = () => {
 }
 
 reset();
-//if(WHITELISTS.split('\n').filter(url=>url&&document.domain.endsWith(url.trim()))!=false){
-  const parts = document.domain.split('.').reverse();
-  const pattern = new RegExp(`^[\\w.]*${parts[1]}\\.${parts[0]}$`, 'mu');
-  const match = WHITELISTS.match(pattern);
-  if(match && document.domain.endsWith(match)){
-    if(false==BLACKLISTS.split('\n').filter(url=>{return(url && new RegExp('^'+url.replace(/[.*+?/\\[{'^"}\]&$]/g, '\\$&'), 'mu').test(document.URL))})){
-      TIMER = setInterval(record, 100);
-      setTimeout(notify, 1000 * 30, document.URL, TIMER);
-      const observer = new MutationObserver(record);
-      observer.observe(document.documentElement, {childList:true,attributes:true,subtree:true});
-    }
-  }
-//}
-/***** From @terjanq *****/
+chrome.runtime.onMessage.addListener(msg=>{
+  if('proceed'!=msg) {notify(document.URL,msg);return}
+  TIMER = setInterval(record, 100);
+  setTimeout(notify, 1000 * 30, document.URL, PATTERNS, true);
+  const observer = new MutationObserver(record);
+  observer.observe(document.documentElement, {childList:true,attributes:true,subtree:true});
+});
 /*
- var lastLength = -1;
-    var start = Date.now();
-    var int = setInterval(()=>{
-        if(window.length != lastLength){
-            lastLength = window.length;
-            console.log(lastLength, Date.now() - start);
-        }
-    },100);
-  setTimeout(clearInterval, 10000, int);
+TODOs:
+- Check if the unauthed request gets redirected to 3rd domain (i.e. the domain change on redirect) -> it's possible to detect redirect to 3rd domain with CSP
+- Check if the unauthed request's Content-type differ or have XFO un/set or have different XXP
 */
