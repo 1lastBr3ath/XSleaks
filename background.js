@@ -514,8 +514,11 @@ https://www.youtube.com/(watch|embed|search|results|playlist|channel)
 `;
 
 chrome.webRequest.onHeadersReceived.addListener(details=>{
+    if(!details.tabId) return;  // return if it's missing tabId- idk
+    if(details.method!='GET') return; // return if not GET, assuming POST requests are CSRF protected
+    if(details.statusCode!=200) return; // return if not 200Ok, to avoid notifying for unnecessary things
     const init = details.initiator || '';
-    if(init && init.startsWith('chrome-extension://')) return;
+    if(init && init.startsWith('chrome-extension://')) return;  // return if request initiated from an extension
     const ignoreTypes = 'stylesheet,script,image,font,media,websocket'.split(',');
     if(ignoreTypes.includes(details.type)) return;  // return if not active document
     
@@ -532,7 +535,7 @@ chrome.webRequest.onHeadersReceived.addListener(details=>{
           let contentType = headers.match(/content-type","value":"([^"]+?)"/i)[1] || 'text/html';
           if(!validDocs.includes(contentType.split(';')[0])) return;  // return if the document is not an active document
           let xxp = headers.match(/x-xss-protection","value":"([^"]+?)"/i)[1] || 1;
-          if(/block/i.test(xxp)) compare(details.url, details.tabId);  // return if xxp is set to block
+          if(/block/i.test(xxp)) compare(details.url, details.tabId);  // return if xxp is not set to block
         }
         catch(e){
           return;

@@ -525,8 +525,9 @@ const reset = () => {
   if(history.length>2) delete(PATTERNS['history']);
 }
 
-const notify = (url, msg, clear=false) => {
+const notify = (msg, clear=false) => {
       if(clear){
+        NOTIFIED = true;
         clearInterval(TIMER);
         if(Object.values(PATTERNS).filter(i=>i.length>1)==false) return;
       }
@@ -535,10 +536,9 @@ const notify = (url, msg, clear=false) => {
         method:'POST',
         credentials:'omit',
         referrerPolicy:'no-referrer',
-        body: `text=${encodeURIComponent(url)}\n${encodeURIComponent(JSON.stringify(msg))}`,
+        body: `text=${encodeURIComponent(msg.url)}\n${JSON.stringify(msg.body)}`,
         headers: {'Content-type':'application/x-www-form-urlencoded'},
       });
-      NOTIFIED=true;
 }
 
 const record = () => {
@@ -550,7 +550,7 @@ const record = () => {
       const SAVED_URLS = localStorage['XSLINKS'] || '';
       const CURRENT_URL = document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
       if(!NOTIFIED && !SAVED_URLS.includes(CURRENT_URL+'\n')){
-        notify(CURRENT_URL, PATTERNS);
+        notify({url:CURRENT_URL, body:PATTERNS});
         localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
       }
       console.table(PATTERNS);
@@ -560,9 +560,13 @@ const record = () => {
 
 reset();
 chrome.runtime.onMessage.addListener(msg=>{
-  if('proceed'!=msg) {notify(document.URL,msg);return}
+  if('proceed'!=msg) {
+    notify(msg);
+    console.table(msg);
+    return;
+  }
   TIMER = setInterval(record, 100);
-  setTimeout(notify, 1000 * 30, document.URL, PATTERNS, true);
+  setTimeout(notify, 1000 * 30, {url:document.URL, body:PATTERNS}, true);
   const observer = new MutationObserver(record);
   observer.observe(document.documentElement, {childList:true,attributes:true,subtree:true});
 });

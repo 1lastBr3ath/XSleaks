@@ -20,11 +20,11 @@ const compare = async (url, tabId) => {
     authd.forEach(i=>{
     	const ai = i.match(pattern)[0];
     	const ui = unauthd.filter(i=>i.includes(ai));
-    	if(false==ui) diffs.push(ai.trim());
+    	if(false==ui) diffs.push(ai || ui.join(' < - > '));
     });
-  	chrome.tabs.sendMessage(tabId, diffs);
+    chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('%0a').replace(/[?;&]/g, i=>escape(i))});
   }
   catch(e){
-    return;
+    chrome.tabs.sendMessage(tabId, {url:url,body:e.message});
   }
 }
