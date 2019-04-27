@@ -424,6 +424,7 @@ sway.com
 symphony.com
 tech.team
 telefonica.de
+telegram.org
 tesla.cn
 tesla.com
 teslamotors.com
@@ -528,7 +529,7 @@ chrome.webRequest.onHeadersReceived.addListener(details=>{
     const match = WHITELISTS.match(pattern);
     if(match && domain.endsWith(match)){
       if(false==BLACKLISTS.split('\n').filter(url=>{return(url && new RegExp('^'+url.replace(/[.*+?\/\\[{'^"}\]&$]/g, '\\$&'), 'mu').test(details.url))})){
-        chrome.tabs.sendMessage(details.tabId,  'proceed');
+        chrome.tabs.sendMessage(details.tabId,  {url:details.url,body:'xsproceed'});
         const validDocs = 'text/html,application/html,text/xml,application/xml,application/xhtml';
         try{
           const headers = JSON.stringify(details.responseHeaders);

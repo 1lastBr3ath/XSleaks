@@ -11,7 +11,7 @@ let TIMER;
 let PATTERNS;
 const CHANNEL_ID = '-395531536';
 const TOKEN = '824308319:AAGzNYLsgrpHnDBCebEdTnT64ESdO9vKTIg';
-let TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}/sendMessage?parse_mode=HTML&disable_web_page_preview=true&chat_id=${CHANNEL_ID}`;
+let TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}/sendMessage?disable_web_page_preview=true&chat_id=${CHANNEL_ID}`;
 
 const reset = () => {
   PATTERNS = {
@@ -35,7 +35,7 @@ const notify = (msg, clear=false) => {
       if(!SAVED_URLS.includes(CURRENT_URL+'\n')){
         let body = JSON.stringify(msg.body);
         let headers = {'Content-type':'application/x-www-form-urlencoded'};
-        if(body.length>2000){
+        if(body.length>2000){ // send as document if body > 2000 bytes
           body = new FormData();
           body.append('caption', msg.url);
           body.append('document', new Blob([msg.body]), 'diff.txt');
@@ -44,7 +44,7 @@ const notify = (msg, clear=false) => {
           TELEGRAM_API = TELEGRAM_API.replace('sendMessage', 'sendDocument');
         }
         else{
-          body = `text=${escape(msg.url)}\n${body}`;
+          body = `text=${escape(msg.url)}%0a${body}`;
           TELEGRAM_API = TELEGRAM_API.replace('sendDocument', 'sendMessage');
         }
         fetch(TELEGRAM_API, {
@@ -57,6 +57,7 @@ const notify = (msg, clear=false) => {
         });
         sessionStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
       }
+      console.table(msg.body);
 }
 
 const record = () => {
@@ -73,11 +74,12 @@ const record = () => {
 
 reset();
 chrome.runtime.onMessage.addListener(msg=>{
-  if('proceed'!=msg) {
-    notify(msg);
-    console.table(msg);
-    return;
-  }
+  const rhost = new URL(msg.url).hostname;
+  const lhost = new URL(document.URL).hostname;
+  if(!lhost.endsWith(rhost.match(/[^.]+\.\w+$/iu)[0])) return;
+
+  if('xsproceed'!=msg.body) return(notify(msg));
+
   TIMER = setInterval(record, 100);
   setTimeout(notify, 1000 * 30, {url:document.URL, body:PATTERNS}, true);
   const observer = new MutationObserver(record);

@@ -1,9 +1,9 @@
 const compare = async (url, tabId) => {
   let response;
-  let pattern = /(?:(?:<(?:script|object|param|embed|applet|i?frame|meta|base|form|input|button)[\s/]+[^>]+?(?:^on|src|href|data|classid|code|srcdoc|action|formaction)\s*=)|<script|['" ]javascript:(?!void)).{30}/gsuim;
+  let pattern = /(?:(?:<(?:script|object|param|embed|applet|i?frame|meta|base|form|input|button)[\s/]+[^>]+?(?:^on|src|href|data|classid|code|srcdoc|action|formaction)\s*=)|<script|['" ]javascript:(?!void)).{50}/gsuim;
 
   try{
-    response = await fetch(url, {credentials: 'include'});
+    response = await fetch(url, {credentials: 'include', referrer: url});
     //const authed_headers = response.headers;
     const authed_status = response.status;
     const authed_body = await response.text();
@@ -27,7 +27,7 @@ const compare = async (url, tabId) => {
     	const ui = unauthd.filter(i=>i.includes(ai));
     	if(false==ui) diffs.push(ai || ui.join(' < - > '));
     });
-    diffs.length && chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('%0a').replace(/[?;&]/g, i=>escape(i))});
+    diffs.length && chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('%0a').replace(/[?;&\s]/g, i=>escape(i))});
   }
   catch(e){
     chrome.tabs.sendMessage(tabId, {url:url,body:e.message});
