@@ -5,16 +5,21 @@ const compare = async (url, tabId) => {
   try{
     response = await fetch(url, {credentials: 'include'});
     //const authed_headers = response.headers;
+    const authed_status = response.status;
     const authed_body = await response.text();
     
-    response = await fetch(url, {credentials: 'omit', redirect: 'error'});
+    response = await fetch(url, {credentials: 'omit', redirect: 'manual'});
     //const unauthed_headers = response.headers;
+    const unauthed_status = response.status || 302;
     const unauthed_body = await response.text();
     
-    const authd = authed_body.match(pattern);
-    const unauthd = unauthed_body.match(pattern);
+    if(authed_status != unauthed_status){
+      throw({message:{[authed_status]:unauthed_status}});
+    }
+    const authd = authed_body.match(pattern) || [];
+    const unauthd = unauthed_body.match(pattern) || [];
     
-    pattern = /(?:^on|src|href|data|classid|code|srcdoc|action|formaction)\s*=\s*(['"]).+$/gsuim;
+    pattern = /<script|['" ]javascript:(?!void)|(?:^on|src|href|data|classid|code|srcdoc|action|formaction)\s*=\s*(['"]).+/gsuim;
     
     let diffs = [];
     authd.forEach(i=>{
@@ -22,7 +27,7 @@ const compare = async (url, tabId) => {
     	const ui = unauthd.filter(i=>i.includes(ai));
     	if(false==ui) diffs.push(ai || ui.join(' < - > '));
     });
-    chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('%0a').replace(/[?;&]/g, i=>escape(i))});
+    diffs.length && chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('%0a').replace(/[?;&]/g, i=>escape(i))});
   }
   catch(e){
     chrome.tabs.sendMessage(tabId, {url:url,body:e.message});
