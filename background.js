@@ -489,6 +489,8 @@ xoom.com
 yahoo.com
 yahoo.net
 yammer.com
+yandex.com
+yandex.ru
 ycombinator.com
 yelp.com
 youku.com
@@ -505,6 +507,7 @@ zomato.com
 z.tt
 zynga.com
 zyngagames.com
+127.0.0.1
 `;
 
 const BLACKLISTS = `
