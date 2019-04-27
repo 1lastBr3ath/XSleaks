@@ -9,7 +9,6 @@
 
 let TIMER;
 let PATTERNS;
-let NOTIFIED;
 const CHANNEL_ID = '-395531536';
 const TOKEN = '824308319:AAGzNYLsgrpHnDBCebEdTnT64ESdO9vKTIg';
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}/sendMessage?parse_mode=HTML&disable_web_page_preview=true&chat_id=${CHANNEL_ID}`;
@@ -519,7 +518,6 @@ const reset = () => {
     history  :[history.length],
     //resource :[performance.getEntriesByType('resource').length],
   };
-  NOTIFIED = false;
   console.table(PATTERNS);
   // delete history if > 2
   if(history.length>2) delete(PATTERNS['history']);
@@ -527,18 +525,22 @@ const reset = () => {
 
 const notify = (msg, clear=false) => {
       if(clear){
-        NOTIFIED = true;
         clearInterval(TIMER);
         if(Object.values(PATTERNS).filter(i=>i.length>1)==false) return;
       }
-      fetch(TELEGRAM_API, {
-        mode:'no-cors',
-        method:'POST',
-        credentials:'omit',
-        referrerPolicy:'no-referrer',
-        body: `text=${encodeURIComponent(msg.url)}\n${JSON.stringify(msg.body)}`,
-        headers: {'Content-type':'application/x-www-form-urlencoded'},
-      });
+      const SAVED_URLS = localStorage['XSLINKS'] || '';
+      const CURRENT_URL = msg.url.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
+      if(!SAVED_URLS.includes(CURRENT_URL+'\n')){
+        fetch(TELEGRAM_API, {
+          mode:'no-cors',
+          method:'POST',
+          credentials:'omit',
+          referrerPolicy:'no-referrer',
+          body: `text=${encodeURIComponent(msg.url)}\n${JSON.stringify(msg.body)}`,
+          headers: {'Content-type':'application/x-www-form-urlencoded'},
+        });
+        localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
+      }
 }
 
 const record = () => {
@@ -547,12 +549,7 @@ const record = () => {
     const PREVIOUS_VALUE = value[value.length-1];
     if(CURRENT_VALUE != PREVIOUS_VALUE){
       PATTERNS[key].push(CURRENT_VALUE);
-      const SAVED_URLS = localStorage['XSLINKS'] || '';
-      const CURRENT_URL = document.URL.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
-      if(!NOTIFIED && !SAVED_URLS.includes(CURRENT_URL+'\n')){
-        notify({url:CURRENT_URL, body:PATTERNS});
-        localStorage['XSLINKS'] = SAVED_URLS + CURRENT_URL + '\n';
-      }
+      notify({url:document.URL,body:PATTERNS});
       console.table(PATTERNS);
     }
   });
