@@ -36,17 +36,23 @@ const compare = async (url, tabId) => {
   }
   
   let diffs = [];
-  const authd = blockers(abody, BLOCKERS);
+  const attr_pattern = /<([a-z]+)[ /][^>]*?(on[a-z]+?)\s*=\s*['"]?/suim;
+  const [,tag,attr] = abody.match(attr_pattern) || [''];  // TODO: needs improvement
+  const authd = blockers(abody, BLOCKERS + (tag&&`,${tag}[${attr}]`));
   
   authd.forEach(i=>{  // looping over authd assuming authd responses have more number of blockers
     let SELECTOR;
-    let tag = i.tagName.toLowerCase();
-    let attributes = ATTRIBUTES[tag].split(',');
-    let avalues = attributes.map(attr=>{
+    const tag = i.tagName.toLowerCase();
+    const attributes = ATTRIBUTES[tag].split(',');
+    const [,,attr] = i.outerHTML.match(attr_pattern) || [''];
+    if(attr) attributes.push(attr);
+    let avalues = [];
+    attributes.forEach(attr=>{
       value=i.getAttribute(attr);
-      if(value) return `${attr}="${value}"`;
-      attributes.splice(attributes.indexOf(attr));
-      return;
+      if(value) return(avalues.push(`${attr}="${value}"`));
+      //attributes.splice(attributes.indexOf(attr),1);
+      delete(attributes[attributes.indexOf(attr)]);
+      //return;
     });
     
     switch(tag){
@@ -60,7 +66,7 @@ const compare = async (url, tabId) => {
         SELECTOR = 'meta[http-equiv="refresh"],meta[http-equiv="set-cookie"]';
         break;
       default:
-        SELECTOR = tag+JSON.stringify(attributes).replace(/"/g,'').replace(/,/g,']['); // a little hack to make it a SELECTOR
+        SELECTOR = tag+JSON.stringify(attributes).replace(/\bnull,|(?<!\\)"/g,'').replace(/\\"/g,'"').replace(/,/g,']['); // a little hack to make it a SELECTOR
     }
     
     // check these against unauthd
@@ -73,15 +79,15 @@ const compare = async (url, tabId) => {
         uvalues.push(elem.innerHTML.substring(0,200));
       } // take only upto 200 chars
       else uvalues = attributes.map(attr=>`${attr}="${elem.getAttribute(attr)}"`);
-      avalues = [...new Set(avalues.sort())];
-      uvalues = [...new Set(uvalues.sort())];
       if(!equals(avalues, uvalues)) diffs.push(`<${tag} ${avalues.join(" ")}>`);
     });
   });
-  diffs.length && chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('\n').replace(/[&]/g, i=>escape(i))});
+  if(diffs = [...new Set(diffs)]) chrome.tabs.sendMessage(tabId, {url:url,body:diffs.join('\n').replace(/[&]/g, i=>escape(i))});
 }
 
 const equals = (a, b) => {  // used for array comparison
+  a = a.sort();
+  b = b.sort();
   return a.every((v,i)=>v?v==b[i]:true);  // ignore falsy elements
 }
 

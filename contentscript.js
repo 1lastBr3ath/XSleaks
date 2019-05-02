@@ -33,12 +33,12 @@ const notify = (msg, clear=false) => {
       const SAVED_URLS = sessionStorage['XSLINKS'] || '';
       const CURRENT_URL = msg.url.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
       if(!SAVED_URLS.includes(CURRENT_URL+'\n')){
-        let body = JSON.stringify(msg.body);
+        let body = JSON.stringify(msg.body);//.replace(/&/g,'%26'));
         let headers = {'Content-type':'application/x-www-form-urlencoded'};
         if(body.length>2000){ // send as document if body > 2000 bytes
           body = new FormData();
           body.append('caption', msg.url);
-          body.append('document', new Blob([msg.body]), 'diff.txt');
+          body.append('document', new Blob([msg.body], {type:'text/html'}), 'diff.txt');
 
           headers['Content-type'] = 'multipart/form-data';
           TELEGRAM_API = TELEGRAM_API.replace('sendMessage', 'sendDocument');
@@ -86,7 +86,7 @@ chrome.runtime.onMessage.addListener(msg=>{
   observer.observe(document.documentElement, {childList:true,attributes:true,subtree:true});
 });
 /*
-TODOs:
+TODO:
 - Compare 2 authd responses instead of authd vs unauthd because unauthd requests mostly redirect to login page
 - Check if the unauthed request gets redirected to 3rd domain (i.e. the domain change on redirect) -> it's possible to detect redirect to 3rd domain with CSP
 - Check if the unauthed request's Content-type differ or have XFO un/set or have different XXP

@@ -1,20 +1,3 @@
-//const notify = url => {
-//  chrome.notifications.create({
-//    priority: 2,
-//    type    : 'basic',
-//    message : `URL: ${url}`,
-//    title   : 'Potential XS leak',
-//    iconUrl : 'http://cm2.pw/favicon.ico'
-//  });
-//}
-
-//chrome.notifications.onClicked.addListener(id => {
-//    //chrome.notifications.clear(id);
-//    //window.open('about:blank', 'xsleaks').document.write(JSON.stringify(PATTERNS));
-//});
-
-//chrome.runtime.onMessage.addListener(message => notify(message.url));
-
 const WHITELISTS = `
 .mil
 .gov
@@ -514,6 +497,7 @@ const BLACKLISTS = `
 https://www.google.com/maps/embed
 https://developer.mozilla.org/en-US/docs/
 https://www.google.com/(search|recaptcha|sorry)
+https://drive.google.com/\\w+/u/\\d+/preload
 https://www.youtube.com/(watch|embed|search|results|playlist|channel)
 `;
 
@@ -531,7 +515,7 @@ chrome.webRequest.onHeadersReceived.addListener(details=>{
     const pattern = new RegExp(`^[\\w.]*${parts[1]}\\.${parts[0]}$`, 'mu');
     const match = WHITELISTS.match(pattern);
     if(match && domain.endsWith(match)){
-      if(false==BLACKLISTS.split('\n').filter(url=>{return(url && new RegExp('^'+url.replace(/[.*+?\/\\[{'^"}\]&$]/g, '\\$&'), 'mu').test(details.url))})){
+      if(false==BLACKLISTS.split('\n').filter(url=>{return(url && new RegExp('^'+url.replace(/[.?\/[{'^"}\]&$]/g, '\\$&'), 'mu').test(details.url))})){
         chrome.tabs.sendMessage(details.tabId,  {url:details.url,body:'xsproceed'});
         const validDocs = 'text/html,application/html,text/xml,application/xml,application/xhtml';
         try{
@@ -540,6 +524,7 @@ chrome.webRequest.onHeadersReceived.addListener(details=>{
           if(!validDocs.includes(contentType.split(';')[0])) return;  // return if the document is not an active document
           let xxp = headers.match(/x-xss-protection","value":"([^"]+?)"/i)[1] || 1;
           if(/block/i.test(xxp)) compare(details.url, details.tabId);  // return if xxp is not set to block
+          // TODO: also consider filter mode
         }
         catch(e){
           return;
