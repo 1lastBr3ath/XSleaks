@@ -32,13 +32,13 @@ const compare = async (url, tabId) => {
     ubody = unauthd_body;
   }
   catch(e){
-    chrome.tabs.sendMessage(tabId, {url:url,body:e.message});
+    return(chrome.tabs.sendMessage(tabId, {url:url,body:e.message}));
   }
   
   let diffs = [];
   const attr_pattern = /<([a-z]+)[ /][^>]*?(on[a-z]+?)\s*=\s*['"]?/suim;
   const [,tag,attr] = abody.match(attr_pattern) || [''];  // TODO: needs improvement
-  const authd = blockers(abody, BLOCKERS + (tag&&`,${tag}[${attr}]`));
+  const authd = blockers(abody, BLOCKERS + (tag&&`,${tag}[${attr}]`||''));
   
   authd.forEach(i=>{  // looping over authd assuming authd responses have more number of blockers
     let SELECTOR;
@@ -50,9 +50,7 @@ const compare = async (url, tabId) => {
     attributes.forEach(attr=>{
       value=i.getAttribute(attr);
       if(value) return(avalues.push(`${attr}="${value}"`));
-      //attributes.splice(attributes.indexOf(attr),1);
       delete(attributes[attributes.indexOf(attr)]);
-      //return;
     });
     
     switch(tag){
@@ -103,5 +101,4 @@ const blockers = (body, selector) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(body, 'text/html');
   return doc.querySelectorAll(selector);
-  // TODO: add missing elements with event handlers (attributes starting with on)
 }

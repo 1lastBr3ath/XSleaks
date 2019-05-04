@@ -33,7 +33,7 @@ const notify = (msg, clear=false) => {
       const SAVED_URLS = sessionStorage['XSLINKS'] || '';
       const CURRENT_URL = msg.url.replace(/[?&;]utm_\w+?=[^&;]+/ig, '');
       if(!SAVED_URLS.includes(CURRENT_URL+'\n')){
-        let body = JSON.stringify(msg.body);//.replace(/&/g,'%26'));
+        let body = 'object'==typeof(msg.body) ? JSON.stringify(msg.body) : msg.body;
         let headers = {'Content-type':'application/x-www-form-urlencoded'};
         if(body.length>2000){ // send as document if body > 2000 bytes
           body = new FormData();
